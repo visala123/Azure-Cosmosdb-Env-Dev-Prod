@@ -101,6 +101,9 @@ In your GitHub repo, go to **Settings → Secrets & variables → Actions->New R
 
 2.INFRACOST_API_KEY  value get from the infracost.io site under Organization settings->API Token
 
+# Environments
+We need to add total four environments that is dev,prod and dev-plan,prod-plan. to avoid manuall for stage branch plan pipeline I used these two envronments(dev-plan and prod-plan) here we are not selecting any reviewer under deployment reviewer.
+
 # Add Collaborators
 Go to your repo → Settings → Collaborators
 
@@ -118,7 +121,7 @@ Note: If you're the owner, you cannot add yourself — you already have full acc
 
 Go to Settings → Environments
 
-Click "New environment", name it dev-approval
+Click "New environment", name it dev
 
 Under "Deployment protection rules", click "Required reviewers"
 
@@ -128,10 +131,18 @@ Click Save
 This will enforce manual approval before applying infrastructure.
 
 # Workflow
-in deployment.yml file choose the env either dev or prod under two pipelines plan and apply
+in deployment.yml file choose the env either dev or prod and dev-plan or prod-plan under plan pipeline
 example:
+environment: ${{ github.event.inputs.environment ||'dev-plan'}}
 env:
       ENV: ${{ github.event.inputs.environment || 'dev' }}
+
+for the Apply pipeline  :
+example
+ environment: ${{ github.event.inputs.environment || 'dev' }}
+    defaults:
+      run:
+        working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
 
  Trigger on stage branch
 
@@ -146,6 +157,8 @@ Go to Actions → Terraform Azure Psql DB CI/CD → Run workflow
 Select the envronment prod or dev
 
 Enter input yes
+
+Waits for approval (based on environment reviewers)
 
 Terraform plan runs
 
