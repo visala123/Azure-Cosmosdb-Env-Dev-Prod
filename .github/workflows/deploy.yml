@@ -1,4 +1,4 @@
-name: Terraform CosmosDB CI/CD
+name: Terraform Azure Psql DB CI/CD
 
 on:
   push:
@@ -19,10 +19,10 @@ jobs:
   plan:
     name: Terraform Plan and Cost Estimate
     runs-on: ubuntu-latest
-
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     env:
       ENV: ${{ github.event.inputs.environment || 'dev' }}
-
+      TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
     defaults:
       run:
         working-directory: terraform/environments/${{ env.ENV }}
@@ -42,7 +42,7 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
+         
       - name: Export ARM environment variables
         run: |
           echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
@@ -100,7 +100,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
 
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    env:
+      ENV: ${{ github.event.inputs.environment || 'dev' }}
+      TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+      
 
     defaults:
       run:
