@@ -20,9 +20,11 @@ jobs:
     name: Terraform Plan and Cost Estimate
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment ||'dev-plan'}}
+    env:
+      ENV: ${{ github.event.inputs.environment || 'dev' }}
     defaults:
       run:
-        working-directory: terraform/environments/${{ github.event.inputs.environment ||'dev'}}
+        working-directory: terraform/environments/${{ env.ENV }}
     outputs:
       tfplan-exists: ${{ steps.tfplan.outputs.plan_created }}
 
@@ -65,8 +67,8 @@ jobs:
         with:
           name: tfplan-files
           path: |
-            terraform/environments/${{ github.event.inputs.environment }}/tfplan.binary
-            terraform/environments/${{ github.event.inputs.environment }}/plan.json
+            terraform/environments/${{ env.ENV }}/tfplan.binary
+            terraform/environments/${{ env.ENV }}/plan.json
 
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
@@ -84,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
-          path: terraform/environments/${{ github.event.inputs.environment }}/infracost-report.txt
+          path: terraform/environments/${{ env.ENV }}/infracost-report.txt
 
       - name: Show Infracost report
         run: |
