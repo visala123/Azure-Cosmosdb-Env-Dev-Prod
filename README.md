@@ -102,7 +102,7 @@ In your GitHub repo, go to **Settings → Secrets & variables → Actions->New R
 2.INFRACOST_API_KEY  value get from the infracost.io site under Organization settings->API Token
 
 # Environments
-We need to add total four environments that is dev,prod and dev-plan,prod-plan. to avoid manuall for stage branch plan pipeline I used these two envronments(dev-plan and prod-plan) here we are not selecting any reviewer under deployment reviewer.
+We need to add total four environments that is dev,prod and dev-plan,prod-plan. to avoid manuall reviewer approval for stage branch plan pipeline I used these two envronments(dev-plan and prod-plan) here we are not selecting any reviewer under deployment reviewer.
 
 # Add Collaborators
 Go to your repo → Settings → Collaborators
