@@ -1,4 +1,4 @@
-name: Terraform Azure Psql DB CI/CD
+name: Terraform Azure Cosmos DB CI/CD
 
 on:
   push:
@@ -19,13 +19,10 @@ jobs:
   plan:
     name: Terraform Plan and Cost Estimate
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    env:
-      ENV: ${{ github.event.inputs.environment || 'dev' }}
-      TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+    environment: ${{ github.event.inputs.environment ||'dev-plan'}}
     defaults:
       run:
-        working-directory: terraform/environments/${{ env.ENV }}
+        working-directory: terraform/environments/${{ github.event.inputs.environment ||'dev'}}
     outputs:
       tfplan-exists: ${{ steps.tfplan.outputs.plan_created }}
 
@@ -68,8 +65,8 @@ jobs:
         with:
           name: tfplan-files
           path: |
-            terraform/environments/${{ env.ENV }}/tfplan.binary
-            terraform/environments/${{ env.ENV }}/plan.json
+            terraform/environments/${{ github.event.inputs.environment }}/tfplan.binary
+            terraform/environments/${{ github.event.inputs.environment }}/plan.json
 
       - name: Setup Infracost
         uses: infracost/actions/setup@v2.1.0
@@ -87,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: infracost-report
-          path: terraform/environments/${{ env.ENV }}/infracost-report.txt
+          path: terraform/environments/${{ github.event.inputs.environment }}/infracost-report.txt
 
       - name: Show Infracost report
         run: |
@@ -101,14 +98,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_apply == 'yes'
 
     environment: ${{ github.event.inputs.environment || 'dev' }}
-    env:
-      ENV: ${{ github.event.inputs.environment || 'dev' }}
-      TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
-      
-
     defaults:
       run:
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: terraform/environments/${{ github.event.inputs.environment || 'dev' }}
 
     steps:
       - name: Checkout code
