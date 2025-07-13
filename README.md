@@ -2,7 +2,56 @@
 
 This repository provides an automated, modular, and environment-specific approach to provisioning Azure CosmosDB resources using Terraform, with CI/CD managed via GitHub Actions.
 
-## Project Structure
+## Prerequisites
+Create a Remote Backend in Azure (Portal Steps)
+Step 1: Create Resource Group
+Go to Azure Portal
+
+Search for “Resource groups”
+
+Click “+ Create”
+
+Name: rg-terraform-state
+
+Region: East US (or your preferred)
+
+Click Review + Create → Create
+
+ Step 2: Create Storage Account
+Search “Storage accounts”
+
+Click “+ Create”
+
+Resource Group: rg-terraform-state
+
+Storage account name: tfstatestorage1234 (must be globally unique)
+
+Region: Same as above
+
+Performance: Standard, Redundancy: LRS
+
+Click Review + Create → Create
+
+ Step 3: Create Blob Container
+Open the storage account you just created
+
+In the left menu, click “Containers”
+
+Click “+ Container”
+
+Name: tfstate, Public access level: Private (no anonymous access)
+
+Click Create
+
+Update backend.tf in your environment folders:
+
+resource_group_name  = "rg-terraform-state"
+storage_account_name = "tfstatestorage1234"
+container_name       = "tfstate"
+
+
+
+ ## Project Structure
 
 ```
 terraform/
@@ -27,104 +76,101 @@ terraform/
     deploy.yml
 ```
 
-### 1. Modules
+##  Required Secrets in GitHub
 
-- **modules/cosmosdb/**: Contains reusable Terraform code for deploying CosmosDB and its resource group.
-  - `main.tf`: Defines the CosmosDB account and resource group.
-  - `variables.tf`: Declares input variables for the module (e.g., resource group name, location, account name, failover, tags, etc.).
-  - `outputs.tf`: Exposes the CosmosDB account name as an output.
+In your GitHub repo, go to **Settings → Environments → prod and dev->add Environment secrets** and add:
 
-### 2. Environments
+1.AZURE_CREDENTIALS  and the value is in Json format
 
-- **environments/dev/** and **environments/prod/**: Each environment has its own set of configuration files.
-  - `backend.tf`: Configures remote state storage in Azure for each environment.
-  - `main.tf`: Instantiates the CosmosDB module with environment-specific variables.
-  - `variables.tf`: Declares variables used in the environment.
-  - `terraform.tfvars`: (Not shown, but typically contains values for variables.)
+```
+{
+  "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "clientSecret": "your-very-secure-client-secret",
+  "tenantId": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+  "subscriptionId": "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz"
+}
+```
 
-### 3. CI/CD Workflow
+These are required for the GitHub Actions workflow to authenticate with Azure.
+How you get these : in shell run the command :
+```
+# az ad sp create-for-rbac --name "<App registration name(Service Principal)>" --role Contributor --scopes /subscriptions/$(az account show --query id -o tsv) --sdk-auth
+```
 
-- **.github/workflows/deploy.yml**: Automates Terraform plan, cost estimation, and apply steps.
+In your GitHub repo, go to **Settings → Secrets & variables → Actions->New Repositorysecrets** and add
 
----
+2.INFRACOST_API_KEY  value get from the infracost.io site under Organization settings->API Token
 
-## Deployment Process
+# Add Collaborators
+Go to your repo → Settings → Collaborators
 
-### 1. Plan and Cost Estimate
+Click "Invite a collaborator"
 
-- On push to the `stage` branch or via manual dispatch, the workflow:
-  - Checks out the code.
-  - Sets up Terraform and Azure authentication.
-  - Initializes Terraform in the correct environment directory.
-  - Validates the configuration.
-  - Runs `terraform plan` and saves the plan.
-  - Uploads the plan as an artifact.
-  - Runs Infracost to estimate the cost of the planned changes and uploads the report.
+Enter your teammate’s GitHub username
 
-### 2. Apply (with Approval)
+Choose appropriate access (usually Write or Admin)
 
-- The `apply` job runs only if manually triggered and the user confirms by typing `yes`.
-- Downloads the plan artifact.
-- Initializes Terraform.
-- Applies the plan, provisioning or updating resources in Azure.
+Send invite
 
----
+Note: If you're the owner, you cannot add yourself — you already have full access.
 
-## Explanation of `deploy.yml`
+# Add a GitHub Environment
 
-- **Triggers**: Runs on push to `stage` or via manual dispatch (with environment and confirmation inputs).
-- **Jobs**:
-  - **plan**:
-    - Sets up the environment and working directory based on the selected environment (`dev` or `prod`).
-    - Authenticates to Azure using secrets.
-    - Runs Terraform init, validate, and plan.
-    - Uploads the plan and cost report as artifacts.
-    - Uses Infracost to provide a cost breakdown.
-  - **apply**:
-    - Requires manual approval and confirmation.
-    - Downloads the plan artifact.
-    - Authenticates to Azure.
-    - Runs Terraform apply using the saved plan.
+Go to Settings → Environments
 
----
+Click "New environment", name it dev-approval
 
-## How to Use
+Under "Deployment protection rules", click "Required reviewers"
 
-1. **Configure Variables**: Edit `terraform.tfvars` in each environment folder with your desired values.
-2. **Push Changes**: Commit and push to the `stage` branch, or trigger the workflow manually.
-3. **Review Plan and Cost**: The workflow will output a plan and cost estimate.
-4. **Apply Changes**: Manually trigger the workflow with `confirm_apply: yes` to apply the changes.
-
----
-
-## Collaboration & Approval Setup
-
-
-### 1. Add Collaborators
-
-1. Go to your repo → **Settings** → **Collaborators**
-2. Click "Invite a collaborator"
-3. Enter your teammate’s GitHub username
-4. Choose appropriate access (usually Write or Admin)
-5. Send invite
-
-> **Note:** If you're the owner, you cannot add yourself — you already have full access.
-
-### 2. Add a GitHub Environment for Manual Approval
-
-1. Go to **Settings** → **Environments**
-2. Click "New environment", name it (e.g., `dev-approval`)
-3. Under "Deployment protection rules", click "Required reviewers"
-4. Add your GitHub username (or a teammate)
-5. Click Save
+Add your GitHub username (or a teammate)
+Click Save
 
 This will enforce manual approval before applying infrastructure.
 
-> **Tip:** You can use this for both `dev` and `prod` environments, and add multiple reviewers if needed.
+# Workflow
+in deployment.yml file choose the env either dev or prod under two pipelines plan and apply
+example:
+env:
+      ENV: ${{ github.event.inputs.environment || 'dev' }}
+
+ Trigger on stage branch
+
+Automatically runs terraform init, plan, and Infracost report
+
+Skips apply step (for preview only)
+
+ Trigger on main branch (Manual Approval)
+
+Go to Actions → Terraform Azure Psql DB CI/CD → Run workflow
+
+Select the envronment prod or dev
+
+Enter input yes
+
+Terraform plan runs
+
+Waits for approval (based on environment reviewers)
+
+Once approved, resources are deployed
+
+##  Outputs
+After apply, you'll see:
+- Cosmos DB Account name
 
 ---
 
+##  Cleanup
+
+```
+terminal
+terraform init
+terraform destroy 
+
+```
+
+
 ## References
 
-- [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
-- [GitHub Actions: Environments and Approvals](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
+- https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cosmosdb_account
+
+## Note: environment should be same in all places, either dev or prod.

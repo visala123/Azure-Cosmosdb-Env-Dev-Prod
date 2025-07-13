@@ -21,6 +21,6 @@ geo_locations = [
 ]
 
 tags = {
-  environment = "dev"
+  environment = "prod"
   team        = "devops"
-}
+  }
