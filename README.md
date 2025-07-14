@@ -78,7 +78,7 @@ terraform/
 
 ##  Required Secrets in GitHub
 
-In your GitHub repo, go to **Settings → Environments → prod and dev->add Environment secrets** and add:
+In your GitHub repo, go to **Settings → Environments → prod and dev,dev-plan and prod-plan->add Environment secrets** and add:
 
 1.AZURE_CREDENTIALS  and the value is in Json format
 
@@ -129,7 +129,7 @@ Click Save
 This will enforce manual approval before applying infrastructure.
 
 # Workflow
-in deployment.yml file choose the env either dev or prod and dev-plan or prod-plan under plan pipeline
+in deployment.yml file choose the env either dev or prod  under plan pipeline
 example:
 environment: ${{ github.event.inputs.environment ||'dev-plan'}}
 env:
