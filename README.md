@@ -97,8 +97,6 @@ How you get these : in shell run the command :
 # az ad sp create-for-rbac --name "<App registration name(Service Principal)>" --role Contributor --scopes /subscriptions/$(az account show --query id -o tsv) --sdk-auth
 ```
 
-In your GitHub repo, go to **Settings → Secrets & variables → Actions->New Repositorysecrets** and add
-
 2.INFRACOST_API_KEY  value get from the infracost.io site under Organization settings->API Token
 
 # Environments
@@ -186,4 +184,3 @@ terraform destroy
 
 - https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cosmosdb_account
 
-## Note: environment should be same in all places, either dev or prod.
